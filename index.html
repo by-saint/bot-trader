@@ -588,4 +588,89 @@
                           <div className="bg-indigo-500/8 border border-indigo-500/20 px-3 py-1 rounded-2xl">
                             <span className="text-xs font-black text-indigo-300 uppercase tracking-widest">EST: {s.eta}</span>
                           </div>
-                          <div className="bg-whit
+                          <div className="bg-white/5 border border-white/10 px-3 py-1 rounded-2xl">
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">VIÉS: {s.bias}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div className="p-4 rounded-lg border bg-white/[0.02]">
+                        <p className="text-[10px] text-slate-500 uppercase">Entrada (BRL)</p>
+                        <div className="text-xl mono font-black">{fmtBRL(s.priceBRL)}</div>
+                      </div>
+                      <div className="p-4 rounded-lg border bg-white/[0.02]">
+                        <p className="text-[10px] text-slate-500 uppercase">Alvo (BRL)</p>
+                        <div className="text-xl mono font-black">{fmtBRL(s.targetBRL)}</div>
+                      </div>
+                      <div className="p-4 rounded-lg border bg-white/[0.02]">
+                        <p className="text-[10px] text-slate-500 uppercase">Stop (BRL)</p>
+                        <div className="text-xl mono font-black">{fmtBRL(s.stopBRL)}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4 pt-4 border-t border-white/5">
+                      <p className="text-xs text-slate-400 italic">"{s.insight}"</p>
+                      <div className="flex gap-3">
+                        <a href={`https://www.mercadobitcoin.com.br/negociacoes/${s.coin.toLowerCase()}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-white text-black rounded-xl uppercase text-xs font-black">Executar no MB</a>
+                        <button onClick={() => handleBacktest(s.symbol)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl uppercase text-xs font-black">Backtest</button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="lg:col-span-4 space-y-8">
+              <div className="glass p-6 rounded-[20px] border-indigo-500/20 shadow-2xl">
+                <h3 className="text-xs font-black text-white mb-4 uppercase italic tracking-widest flex items-center gap-3"><div className="w-2.5 h-2.5 bg-indigo-400 rounded-full shadow-[0_0_15px_#6366f1]"></div>Omnis Protocol vFull</h3>
+                <p className="text-[12px] text-slate-300 italic mb-4">Frontend-only mode. Sistema projetado para maximizar probabilidade com regras institucionais, validação por heurística e verificação de liquidez. Para implantação real (ordens automáticas, chaves privadas), use backend seguro.</p>
+
+                <div className="text-sm space-y-3">
+                  <div><strong>Filtro liquidez:</strong> {config.MIN_QUOTE_VOL.toLocaleString('pt-BR')}</div>
+                  <div><strong>Capital inicial (simulação):</strong> {fmtBRL(config.INITIAL_CAPITAL_BRL)}</div>
+                  <div><strong>Max por trade:</strong> {config.MAX_CAPITAL_PERCENT_PER_TRADE}%</div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-indigo-950/30 to-black p-6 rounded-[20px] border border-indigo-500/20 shadow-2xl">
+                <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] mb-3 italic">Backtest</h4>
+                {backtestReport ? (
+                  backtestReport.error ? (
+                    <p className="text-sm text-red-400">{backtestReport.error}</p>
+                  ) : backtestReport.running ? (
+                    <p className="text-sm text-slate-400">Executando...</p>
+                  ) : (
+                    <div className="text-sm text-slate-300 space-y-2">
+                      <div>Trades: {backtestReport.tradesCount}</div>
+                      <div>Winrate: {backtestReport.winrate.toFixed(2)}%</div>
+                      <div>Total PnL: {fmtBRL(backtestReport.totalPnl)}</div>
+                      <div>Final Balance: {fmtBRL(backtestReport.finalBalance)}</div>
+                    </div>
+                  )
+                ) : (
+                  <p className="text-sm text-slate-400">Clique em "Backtest" em qualquer sinal para rodar uma simulação rápida.</p>
+                )}
+              </div>
+
+              <div className="glass p-6 rounded-[20px]">
+                <h4 className="text-xs font-black text-white uppercase italic mb-2">Atenção</h4>
+                <ul className="text-xs text-slate-400 list-disc ml-4 space-y-2">
+                  <li>Este projeto é front-end apenas — chaves expostas significam risco.</li>
+                  <li>Integração de ordens reais requer backend seguro, KYC e medidas anti-fraud.</li>
+                  <li>Resultados simulados não garantem performance futura. Teste em conta demo.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // render
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
