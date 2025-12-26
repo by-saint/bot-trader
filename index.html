@@ -1,676 +1,538 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MB Sniper Quantum-Vortex | OMNIS VISION — Frontend Only</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
-    :root { --accent: #6366f1; --bg: #020205; }
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: #f8fafc; overflow-x: hidden; }
-    .mono { font-family: 'JetBrains Mono', monospace; }
-    .glass { background: rgba(10, 10, 15, 0.8); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.03); }
-    .glow-indigo { box-shadow: 0 0 60px -15px rgba(99,102,241,0.45); }
-    .scan-bar { height: 2px; background: linear-gradient(90deg, transparent, #6366f1, transparent); width: 100%; position: absolute; z-index: 10; animation: scanning 2.8s linear infinite; }
-    @keyframes scanning { 0% { top: 0; } 100% { top: 100%; } }
-    .h-gradient { background: linear-gradient(135deg, #fff 20%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .progress-bar { height: 4px; background: linear-gradient(90deg, #4f46e5, #818cf8); transition: width 0.4s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 15px #6366f1; }
-    .tech-card:hover { border-color: rgba(99,102,241,0.45); transform: translateY(-4px); transition: all 0.25s ease; }
-    .btn { cursor: pointer; }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>MB Sniper | QUANTUM-VORTEX Omni-Asset</title>
+
+    <!-- Tailwind + React UMD (Babel para JSX no navegador) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+
+        :root { --accent: #4f46e5; --bg: #010103; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: #f8fafc; overflow-x: hidden; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        .glass { background: rgba(5, 5, 12, 0.95); backdrop-filter: blur(50px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .glow-pulse { box-shadow: 0 0 80px -20px rgba(79, 70, 229, 0.4); }
+
+        .scan-line { height: 1px; background: linear-gradient(90deg, transparent, #818cf8, transparent); width: 100%; position: absolute; z-index: 10; animation: scanning 1.2s linear infinite; }
+        @keyframes scanning { 0% { top: -5%; } 100% { top: 105%; } }
+
+        .h-gradient { background: linear-gradient(135deg, #fff 40%, #818cf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .card-institutional { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(255, 255, 255, 0.02); background: linear-gradient(180deg, rgba(10,10,20,0.9) 0%, rgba(2,2,5,1) 100%); }
+        .card-institutional:hover { border-color: rgba(99, 102, 241, 0.5); transform: translateY(-5px); box-shadow: 0 20px 40px -10px rgba(0,0,0,0.9); }
+
+        .progress-bar { height: 3px; background: linear-gradient(90deg, #4f46e5, #c084fc); transition: width 0.2s ease; box-shadow: 0 0 15px #4f46e5; }
+
+        /* Small responsive tweaks */
+        @media (max-width: 768px) {
+            .scan-line { display:none; }
+        }
+    </style>
 </head>
 <body>
-  <div id="root"></div>
+    <div id="root"></div>
 
-  <script type="text/babel">
-    const { useState, useEffect, useRef, useCallback } = React;
+    <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
 
-    /**************************************************************************
-     * CONFIGURAÇÕES — ajuste conforme necessidade
-     *
-     * NOTE: inserir qualquer chave API no front-end significa que ela será
-     * publicamente visível. É fortemente recomendado usar backend para chaves.
-     **************************************************************************/
-    const config = {
-      API_KEY_LLMS: "", // Opcional: chave para modelo generativo (ex.: Gemini). DE RISCO se exposto.
-      // Lista alvo (expanda/ate conforme preferência)
-      MB_WHITELIST: [
+    /************************************************************************
+     * CONFIGURAÇÕES
+     * - Atenção: colocar chaves no front-end é inseguro. Este projeto é
+     *   front-end only por sua escolha; mantenha chaves fora do código.
+     ************************************************************************/
+    const OMNI_WHITELIST = [
         'BTC','ETH','SOL','XRP','ADA','DOT','LINK','AVAX','MATIC','LTC',
-        'BCH','DOGE','NEAR','ALGO','ATOM','UNI','AAVE','MANA','GRT','OP','ARB','SUI','APT'
-      ],
-      SCAN_INTERVAL: 60_000, // milissegundos
-      POOL_CONCURRENCY: 4, // quantos tickers buscar em paralelo
-      MIN_QUOTE_VOL: 1_500_000, // filtro de liquidez
-      FEE_MB: 0.014,
-      SAFETY_BUFFER: 0.005,
-      MIN_CONFIDENCE: 75, // para considerar sinal final
-      MAX_CAPITAL_PERCENT_PER_TRADE: 3, // % do capital por trade sugerido
-      INITIAL_CAPITAL_BRL: 20000 // para sizing e backtest default
+        'BCH','DOGE','SHIB','NEAR','ALGO','ATOM','UNI','AAVE','SAND','MANA',
+        'GRT','CHZ','AXS','RENDER','FETCH','PEPE','STX','TIA','BONK','FLOKI',
+        'OP','ARB','SUI','APT','IMX','LDO','FET','VET','FIL','ETC','INJ','SEI',
+        'KAS','GALA','ROSE','JUP','PYTH','WIF','ENA','W','STRK','ZRO','TON',
+        'THETA','LRC','MKR','DYDX','ENS','RUNE','SNX','CRV','BEAM','AGIX','OCEAN',
+        'TRX','KAVA','NEO','EOS','FLOW','STG','WOO'
+    ];
+
+    const ENGINE_CONFIG = {
+        FEE_MB: 0.014,
+        SPREAD_BUFFER: 0.005,
+        MIN_SCORE: 82,
+        COOLDOWN_MS: 60000,
+        POOL_CONCURRENCY: 4,
+        MIN_QUOTE_VOL: 1_500_000
     };
 
-    /**************************************************************************
-     * UTILS - cálculos técnicos robustos
-     **************************************************************************/
+    /************************************************************************
+     * UTILITÁRIOS - funções seguras para parsing e estatística
+     ************************************************************************/
     const safeParseFloat = (v) => {
-      const n = parseFloat(v);
-      return isNaN(n) ? 0 : n;
+        const n = parseFloat(v);
+        return Number.isFinite(n) ? n : 0;
     };
 
-    function sma(arr, window) {
-      const w = Math.min(window, arr.length);
-      if (w === 0) return null;
-      const slice = arr.slice(-w);
-      return slice.reduce((a,b)=>a+ b, 0)/w;
-    }
+    const mean = (arr) => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+    const stddev = (arr) => {
+        if (!arr.length) return 0;
+        const m = mean(arr);
+        return Math.sqrt(arr.reduce((s,x)=>s + Math.pow(x-m,2), 0) / arr.length);
+    };
 
-    function ema(arr, window) {
-      if (!arr.length) return null;
-      const w = Math.min(window, arr.length);
-      const k = 2 / (w + 1);
-      // start from sma of first window
-      let emaPrev = arr.slice(0, w).reduce((a,b)=>a+b,0)/w;
-      for (let i = w; i < arr.length; i++) {
-        emaPrev = arr[i] * k + emaPrev * (1 - k);
-      }
-      return emaPrev;
-    }
+    // ATR (correct index handling)
+    const atrFromKlines = (klines, window = 14) => {
+        if (!Array.isArray(klines) || klines.length < 2) return 0;
+        const start = Math.max(1, klines.length - window);
+        const trs = [];
+        for (let i = start; i < klines.length; i++) {
+            const high = safeParseFloat(klines[i][2]);
+            const low = safeParseFloat(klines[i][3]);
+            const prevClose = safeParseFloat(klines[i-1][4]);
+            trs.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose)));
+        }
+        return trs.length ? trs.reduce((a,b)=>a+b,0)/trs.length : 0;
+    };
 
-    function rsi(arr, window = 14) {
-      if (arr.length < 2) return null;
-      const changes = [];
-      for (let i = 1; i < arr.length; i++) {
-        changes.push(arr[i] - arr[i-1]);
-      }
-      const gains = changes.map(x => x > 0 ? x : 0);
-      const losses = changes.map(x => x < 0 ? Math.abs(x) : 0);
-      const avgGain = sma(gains, window) || 0;
-      const avgLoss = sma(losses, window) || 0;
-      if (avgLoss === 0) return 100;
-      const rs = avgGain / avgLoss;
-      return 100 - (100 / (1 + rs));
-    }
-
-    function bollinger(arr, window = 20, mult = 2) {
-      if (arr.length < window) return null;
-      const slice = arr.slice(-window);
-      const mean = slice.reduce((a,b)=>a+b,0)/window;
-      const variance = slice.reduce((a,b)=>a + Math.pow(b - mean,2), 0) / window;
-      const sd = Math.sqrt(variance);
-      return { upper: mean + mult * sd, lower: mean - mult * sd, mean, sd };
-    }
-
-    function atrFromKlines(k15, window = 14) {
-      // k format: [openTime, open, high, low, close, volume, ...]
-      if (!k15 || k15.length < 2) return 0;
-      const tr = [];
-      // calcular TR de forma absoluta e correta
-      for (let i = Math.max(1, k15.length - window); i < k15.length; i++) {
-        const high = safeParseFloat(k15[i][2]);
-        const low = safeParseFloat(k15[i][3]);
-        const prevClose = safeParseFloat(k15[i-1][4]);
-        tr.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose)));
-      }
-      return tr.length ? tr.reduce((a,b)=>a+b,0)/tr.length : 0;
-    }
-
-    /**************************************************************************
-     * Helper: pool/parallel chunking para evitar rate limits
-     **************************************************************************/
+    /************************************************************************
+     * Chunking utility to process tickers in bounded concurrency
+     ************************************************************************/
     function chunkArray(arr, size) {
-      const out = [];
-      for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-      return out;
+        const out = [];
+        for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+        return out;
     }
 
-    /**************************************************************************
-     * Local Omnis Heuristics (fallback) — combina vários indicadores para
-     * gerar uma decisão e "confidence". Isto é o coração do robo sem IA remota.
-     **************************************************************************/
-    function localOmnisValidate(symbol, k15, k1h, context) {
-      // Precondições
-      if (!k15 || k15.length < 20 || !k1h || k1h.length < 50) {
-        return { decision: "HOLD", confidence: 0, reason: "Insufficient data" };
-      }
-      const closes15 = k15.map(k => safeParseFloat(k[4]));
-      const closes1h = k1h.map(k => safeParseFloat(k[4]));
-
-      const current = closes15[closes15.length - 1];
-      const sma200 = sma(closes1h, 200) || closes1h[closes1h.length - 1];
-      const ema50 = ema(closes15, 50) || closes15[closes15.length - 1];
-      const rsi14 = rsi(closes15, 14);
-      const bb = bollinger(closes15, 20, 2);
-      const atr = atrFromKlines(k15, 14);
-      const volCurrent = safeParseFloat(k15[k15.length -1][5]);
-      const volAvg = k15.slice(-20).reduce((a,b)=>a + safeParseFloat(b[5]),0)/Math.min(20, k15.length);
-      const volumeSpike = volCurrent > volAvg * 1.3;
-      const squeeze = bb ? ((bb.upper - bb.lower) / bb.mean) < 0.045 : false;
-
-      // Score building
-      let score = 0;
-      if (current > sma200) score += 25;
-      if (current > ema50) score += 20;
-      if (volumeSpike) score += 20;
-      if (squeeze) score += 20;
-      if (rsi14 && rsi14 < 60 && rsi14 > 30) score += 10; // healthy mid-rsi
-      // ajustar com volume 24h do contexto
-      if (context && context.vol_24h && parseFloat(context.vol_24h) > 2_000_000) score += 5;
-
-      // regras negativas
-      if (rsi14 && rsi14 > 75) score -= 20; // sobrecompra
-      if (!squeeze && !volumeSpike) score -= 10;
-
-      const normalized = Math.max(0, Math.min(100, Math.round(score)));
-      const decision = normalized >= config.MIN_CONFIDENCE ? "BUY" : "HOLD";
-
-      // target multiplier: agressivo se squeeze + volumeSpike, conservador se menor confiança
-      let targetMultiplier = normalized >= 85 ? 3.2 : normalized >= 70 ? 2.2 : 1.6;
-      // eta heurística (minutos) baseado em ATR e squeeze
-      const eta_minutes = Math.max(15, Math.round((atr ? (current / atr) : 30) * (squeeze ? 0.7 : 1.2)));
-
-      const reasoning = `Score ${normalized} | SMA200:${sma200.toFixed(4)} EMA50:${ema50.toFixed(4)} RSI:${(rsi14||0).toFixed(2)} ATR:${atr.toFixed(4)} VolSpike:${volumeSpike}`;
-
-      return {
-        decision,
-        confidence: normalized,
-        target_multiplier: targetMultiplier,
-        eta_minutes,
-        market_bias: normalized >= 60 ? "BULL" : "NEUTRAL",
-        reasoning
-      };
-    }
-
-    /**************************************************************************
-     * Opcional: Chamada para LLM remoto (USAR COM CUIDADO). Se config.API_KEY_LLMS
-     * estiver vazio o código usa o fallback localOmnisValidate.
-     *
-     * Esta função tem parsing defensivo e timeout.
-     **************************************************************************/
-    async function validateWithRemoteAI(symbol, k15, context) {
-      if (!config.API_KEY_LLMS) return null;
-      const prompt = `Analise para ${symbol}. Forneça APENAS JSON com: {"decision":"BUY"|"HOLD","confidence":0-100,"target_multiplier":number,"eta_minutes":number,"market_bias":"string","reasoning":"string"}. Dados OHLCV: ${JSON.stringify(k15.slice(-30))}. Contexto: ${JSON.stringify(context)}.`;
-      const controller = new AbortController();
-      const timeout = setTimeout(()=>controller.abort(), 12_000); // 12s timeout
-      try {
-        // Exemplo: endpoint do Gemini-like (pode não aceitar CORS)
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${config.API_KEY_LLMS}`;
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type":"application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: "application/json" }
-          })
-        });
-        clearTimeout(timeout);
-        if (!res.ok) {
-          console.warn('AI remote returned', res.status);
-          return null;
+    /************************************************************************
+     * Compute precision metrics - robust checks + defensive code
+     ************************************************************************/
+    const computePrecisionMetrics = (k5, k15, k1h) => {
+        // Validate datasets
+        if (!Array.isArray(k15) || !Array.isArray(k1h) || k15.length < 20 || k1h.length < 20) {
+            return { valid: false };
         }
-        const obj = await res.json();
-        const candidate = obj?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!candidate || typeof candidate !== 'string') return null;
-        // Extrair primeiro JSON encontrado (defensivo)
-        const firstBrace = candidate.indexOf('{');
-        const lastBrace = candidate.lastIndexOf('}');
-        if (firstBrace === -1 || lastBrace === -1) return null;
-        const rawJson = candidate.slice(firstBrace, lastBrace + 1);
-        try {
-          const parsed = JSON.parse(rawJson);
-          // validar shape
-          if (typeof parsed.decision === 'string' && typeof parsed.confidence === 'number') {
-            return parsed;
-          }
-          return null;
-        } catch (err) {
-          console.warn('JSON parse fail from LLM', err);
-          return null;
-        }
-      } catch (err) {
-        console.warn('Remote AI error', err);
-        return null;
-      } finally {
-        clearTimeout(timeout);
-      }
-    }
 
-    /**************************************************************************
-     * Liquidity check via order book (depth). Retorna true se profundidade
-     * suficiente para entrada/saída sem slippage extremo.
-     **************************************************************************/
-    async function checkLiquidity(symbol, minNotionalBRL=10000, usdtBrl=5.0) {
-      // usamos Binance order book para obter profundidade (este é front-end => CORS pode aplicar)
-      try {
-        const depth = await fetch(`https://api.binance.com/api/v3/depth?symbol=${symbol}&limit=50`)
-          .then(r => r.ok ? r.json() : null);
-        if (!depth) return false;
-        // aproximar base de USDT: média de sum das mesmas ordens
-        const bidsVol = depth.bids.slice(0,10).reduce((s,b)=>s + safeParseFloat(b[1]) * safeParseFloat(b[0]), 0);
-        const asksVol = depth.asks.slice(0,10).reduce((s,a)=>s + safeParseFloat(a[1]) * safeParseFloat(a[0]), 0);
-        // notional médio
-        const notional = Math.min(bidsVol, asksVol);
-        // converter USDT->BRL
-        const notionalBRL = notional * usdtBrl;
-        return notionalBRL >= minNotionalBRL;
-      } catch (e) {
-        console.warn('liquidity check fail', e);
-        return false;
-      }
-    }
+        const closes15 = k15.map(k => safeParseFloat(k[4]));
+        const vols15 = k15.map(k => safeParseFloat(k[5]));
+        const closes1h = k1h.map(k => safeParseFloat(k[4]));
 
-    /**************************************************************************
-     * Backtest simples: percorre candles e aplica regra localOmnisValidate em
-     * cada candle (simulação intraday simples). Retorna métricas básicas.
-     **************************************************************************/
-    function simpleBacktest(k15, lookbackCandles = 500, capitalBRL = config.INITIAL_CAPITAL_BRL) {
-      // estratégia: quando localOmnisValidate decide BUY com confidence >= MIN_CONF -> entrar
-      const data = k15.slice(-lookbackCandles);
-      const closes = data.map(k => safeParseFloat(k[4]));
-      const candles = data; // reuse
-      let balance = capitalBRL;
-      let position = null; // {entryPrice, sizeBRL, stopPrice, targetPrice}
-      let trades = [];
-      for (let t = 50; t < candles.length; t++) {
-        const window15 = candles.slice(0, t+1);
-        const window1h = window15; // simplificação: usar mesmo timeframe para teste
-        const ctx = { vol_24h: 0 };
-        const out = localOmnisValidate('SIM', window15, window1h, ctx);
-        const close = safeParseFloat(candles[t][4]);
-        if (!position && out.decision === 'BUY' && out.confidence >= config.MIN_CONFIDENCE) {
-          const atr = atrFromKlines(window15, 14) || 0.0001;
-          const target = close + atr * (out.target_multiplier || 2);
-          const stop = close - atr * 1.5;
-          // sizing: percent of capital
-          const sizeBRL = (config.MAX_CAPITAL_PERCENT_PER_TRADE / 100) * balance;
-          position = { entryPrice: close, sizeBRL, stop, target, entryIndex: t };
-        }
-        if (position) {
-          // check hit stop or target at this candle
-          const h = safeParseFloat(candles[t][2]);
-          const l = safeParseFloat(candles[t][3]);
-          let closed = false;
-          let exitPrice = close;
-          if (l <= position.stop) {
-            exitPrice = position.stop;
-            closed = true;
-          } else if (h >= position.target) {
-            exitPrice = position.target;
-            closed = true;
-          }
-          if (closed) {
-            const retPct = (exitPrice / position.entryPrice) - 1;
-            const profitBRL = position.sizeBRL * retPct - (position.sizeBRL * config.FEE_MB) - (position.sizeBRL * config.SAFETY_BUFFER);
-            balance += profitBRL;
-            trades.push({ entry: position.entryPrice, exit: exitPrice, retPct, profitBRL, entryIndex: position.entryIndex, exitIndex: t });
-            position = null;
-          }
-        }
-      }
-      const wins = trades.filter(t => t.profitBRL > 0);
-      const loss = trades.filter(t => t.profitBRL <= 0);
-      const winrate = trades.length ? (wins.length / trades.length) * 100 : 0;
-      const totalPnl = trades.reduce((a,b)=>a + b.profitBRL, 0);
-      const avgReturn = trades.length ? (trades.reduce((a,b)=>a + b.retPct,0)/trades.length) : 0;
-      return { tradesCount: trades.length, winrate, totalPnl, avgReturn, finalBalance: balance, tradesSample: trades.slice(-10) };
-    }
+        const currentPrice = closes15[closes15.length - 1];
 
-    /**************************************************************************
-     * Engine principal: coleta tickers, filtra, analisa e aplica validação
-     **************************************************************************/
-    const App = () => {
-      const [signals, setSignals] = useState([]);
-      const [status, setStatus] = useState('IDLE');
-      const [usdtBrl, setUsdtBrl] = useState(0);
-      const [progress, setProgress] = useState(0);
-      const [loading, setLoading] = useState(false);
-      const isRunningRef = useRef(false);
-      const timerRef = useRef(0);
-      const [timerSeconds, setTimerSeconds] = useState(config.SCAN_INTERVAL / 1000);
-      const [backtestReport, setBacktestReport] = useState(null);
+        // Volume Z-score (last 20)
+        const volWindow = vols15.slice(-20);
+        const avgVol = mean(volWindow);
+        const sdVol = stddev(volWindow) || 1;
+        const volumeZScore = (vols15[vols15.length - 1] - avgVol) / sdVol;
 
-      const fmtBRL = (v) => {
-        try {
-          return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: v < 1 ? 4 : 2 });
-        } catch {
-          return `R$ ${Number(v).toFixed(2)}`;
-        }
-      };
+        // SMA 200 on 1H (use available length if <200)
+        const smaWindow = Math.min(200, closes1h.length);
+        const sma200h = mean(closes1h.slice(-smaWindow));
 
-      // Core run function: avoids overlap and uses chunking
-      const runOmnisEngine = useCallback(async (manual=false) => {
-        if (isRunningRef.current) {
-          console.log('Engine already running');
-          return;
-        }
-        isRunningRef.current = true;
-        setLoading(true);
-        setStatus('INICIANDO VARREDURA');
-        setProgress(5);
-        try {
-          // 1) buscar taxa USDTBRL (fallback se não disponível)
-          let dollarRate = 1;
-          try {
-            const uRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=USDTBRL')
-              .then(r => r.ok ? r.json() : null);
-            if (uRes && uRes.price) dollarRate = safeParseFloat(uRes.price);
-            else {
-              // fallback: usar ticker USDTBUSD ~ 1 (BRL conversion must come from elsewhere)
-              dollarRate = usdtBrl || 5.0;
+        // EMA21 on 15m (simple EMA implementation)
+        const ema21 = (() => {
+            const arr = closes15.slice(-60); // use at most 60 values to compute stable EMA
+            if (!arr.length) return currentPrice;
+            const window = Math.min(21, arr.length);
+            const k = 2 / (window + 1);
+            let emaPrev = mean(arr.slice(0, window));
+            for (let i = window; i < arr.length; i++) {
+                emaPrev = arr[i] * k + emaPrev * (1 - k);
             }
-          } catch (e) {
-            console.warn('fetch usdtbrl fail', e);
-            dollarRate = usdtBrl || 5.0;
-          }
-          setUsdtBrl(dollarRate);
-          setProgress(15);
+            return emaPrev;
+        })();
 
-          // 2) buscar tickers 24h
-          const tickers24 = await fetch('https://api.binance.com/api/v3/ticker/24hr')
-            .then(r => r.ok ? r.json() : []);
-          // filtrar whitelist (comparar com suffix USDT)
-          const activeTickers = tickers24.filter(t => {
-            try {
-              const base = t.symbol.replace('USDT','');
-              return config.MB_WHITELIST.includes(base) && safeParseFloat(t.quoteVolume) > config.MIN_QUOTE_VOL;
-            } catch { return false; }
-          });
+        // Stochastic RSI basic (defensive)
+        const rsi = (() => {
+            const period = 14;
+            if (closes15.length < period + 1) return 50;
+            const changes = [];
+            for (let i = closes15.length - period - 1; i < closes15.length - 1; i++) {
+                changes.push(closes15[i+1] - closes15[i]);
+            }
+            const gains = changes.map(x => x > 0 ? x : 0);
+            const losses = changes.map(x => x < 0 ? Math.abs(x) : 0);
+            const avgGain = mean(gains);
+            const avgLoss = mean(losses) || 1;
+            const rs = avgGain / avgLoss;
+            return 100 - (100 / (1 + rs));
+        })();
 
-          // safety: se nenhum, expandir sem filtro quoteVolume
-          const candidates = activeTickers.length ? activeTickers : tickers24.filter(t => config.MB_WHITELIST.includes(t.symbol.replace('USDT',''))).slice(0, 40);
+        // StochRSI approx: normalize last RSI vs min/max of window
+        const stochRsi = (() => {
+            const rWindow = 14;
+            const rsiSeries = [];
+            // compute a small series of RSI-like values
+            for (let i = Math.max(0, closes15.length - (rWindow * 2)); i < closes15.length; i++) {
+                if (i < 1) continue;
+                const change = closes15[i] - closes15[i-1];
+                rsiSeries.push(change > 0 ? change : 0);
+            }
+            const minR = Math.min(...rsiSeries, 0);
+            const maxR = Math.max(...rsiSeries, 1);
+            const last = rsiSeries[rsiSeries.length - 1] || 0;
+            return (last - minR) / (maxR - minR || 1);
+        })();
 
-          setProgress(25);
-          // chunk and process with defined concurrency
-          const groups = chunkArray(candidates, config.POOL_CONCURRENCY);
-          const identified = [];
+        // ATR for target calculation (on 15m)
+        const atr = atrFromKlines(k15, 14);
 
-          for (let g = 0; g < groups.length; g++) {
-            const group = groups[g];
-            // process all in parallel within group
-            await Promise.all(group.map(async (ticker, idx) => {
-              const symbol = ticker.symbol;
-              try {
-                // fetch k-lines
-                // Obs: reduzir limites para performance, porém manter suficiente para indicadores
-                const [k15, k1h] = await Promise.all([
-                  fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=15m&limit=200`).then(r => r.ok ? r.json() : null),
-                  fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1h&limit=300`).then(r => r.ok ? r.json() : null)
-                ]);
-                if (!k15 || !k1h) return;
+        // Score composition
+        let score = 0;
+        if (currentPrice > sma200h) score += 35;
+        if (currentPrice > ema21) score += 15;
+        if (volumeZScore > 1.8) score += 25;
+        if (stochRsi < 0.20) score += 25;
+        // clamp score 0-100
+        score = Math.max(0, Math.min(100, Math.round(score)));
 
-                const tech = (function performTechnicalScanLocal(k15_, k1h_) {
-                  const closes = k15_.map(k => safeParseFloat(k[4]));
-                  const current = closes[closes.length - 1];
-                  const atr = atrFromKlines(k15_, 14);
-                  const sma200 = sma(k1h_.map(k=>safeParseFloat(k[4])), 200) || current;
-                  const ema50 = ema(closes, 50) || current;
-                  const bb = bollinger(closes, 20, 2);
-                  const volCurrent = safeParseFloat(k15_[k15_.length-1][5]);
-                  const volAvg = k15_.slice(-20).reduce((a,b)=>a + safeParseFloat(b[5]),0)/Math.min(20, k15_.length);
-                  const volumeSpike = volCurrent > volAvg * 1.3;
-                  const squeeze = bb ? ((bb.upper - bb.lower) / bb.mean) < 0.04 : false;
-                  let score = 0;
-                  if (current > sma200) score += 30;
-                  if (current > ema50) score += 20;
-                  if (volumeSpike) score += 20;
-                  if (squeeze) score += 20;
-                  return { current, atr, score, isCandidate: score >= 50, sma200, ema50, bb, squeeze, volumeSpike };
-                })(k15, k1h);
-
-                // quick skip
-                if (!tech.isCandidate) return;
-
-                // check liquidity quick
-                const liquidityOk = await checkLiquidity(symbol, 10_000, dollarRate);
-                if (!liquidityOk) return;
-
-                // ai validation: try remote then fallback local
-                const ctx = { tech_score: tech.score, vol_24h: ticker.quoteVolume, last_price: tech.current };
-                let aiVal = null;
-                if (config.API_KEY_LLMS) {
-                  aiVal = await validateWithRemoteAI(symbol, k15.slice(-40), ctx);
-                }
-                if (!aiVal) {
-                  aiVal = localOmnisValidate(symbol, k15, k1h, ctx);
-                }
-
-                if (aiVal && aiVal.decision === 'BUY' && aiVal.confidence >= config.MIN_CONFIDENCE) {
-                  const targetMultiplier = aiVal.target_multiplier || 2.2;
-                  const targetPrice = tech.current + tech.atr * (targetMultiplier || 2);
-                  const grossProfit = (targetPrice / tech.current) - 1;
-                  const netProfitPct = (grossProfit - config.FEE_MB - config.SAFETY_BUFFER) * 100;
-                  if (netProfitPct > 1.0) {
-                    // sizing
-                    const suggestedBRL = (config.MAX_CAPITAL_PERCENT_PER_TRADE / 100) * config.INITIAL_CAPITAL_BRL;
-                    const stopPrice = tech.current - tech.atr * 1.5;
-                    identified.push({
-                      coin: symbol.replace('USDT',''),
-                      symbol,
-                      confidence: aiVal.confidence,
-                      priceUSDT: tech.current,
-                      priceBRL: tech.current * dollarRate,
-                      targetUSDT: targetPrice,
-                      targetBRL: targetPrice * dollarRate,
-                      stopUSDT: stopPrice,
-                      stopBRL: stopPrice * dollarRate,
-                      netProfitPct: netProfitPct.toFixed(2),
-                      eta: aiVal.eta_minutes + ' min',
-                      bias: aiVal.market_bias,
-                      insight: aiVal.reasoning,
-                      suggestedBRL
-                    });
-                  }
-                }
-              } catch (err) {
-                // silencioso para não travar grupo
-                console.warn('tick error', ticker?.symbol, err);
-              }
-            }));
-            setProgress(Math.round(25 + (g / groups.length) * 60));
-          } // end groups
-
-          // ordenar por confidence e netProfit
-          identified.sort((a,b) => b.confidence - a.confidence || parseFloat(b.netProfitPct) - parseFloat(a.netProfitPct));
-          setSignals(identified);
-          setStatus('IDLE');
-          setProgress(100);
-          setLoading(false);
-        } catch (err) {
-          console.error('Engine error', err);
-          setStatus('ERRO NO NÓ DE DADOS');
-          setLoading(false);
-        } finally {
-          isRunningRef.current = false;
-        }
-      }, [usdtBrl]);
-
-      // timer e auto-scan
-      useEffect(() => {
-        runOmnisEngine();
-        let countdown = config.SCAN_INTERVAL / 1000;
-        setTimerSeconds(countdown);
-        const tick = setInterval(() => {
-          countdown -= 1;
-          if (countdown <= 0) {
-            runOmnisEngine();
-            countdown = config.SCAN_INTERVAL / 1000;
-          }
-          setTimerSeconds(countdown);
-        }, 1000);
-        return () => clearInterval(tick);
-      }, [runOmnisEngine]);
-
-      // UI handlers
-      const handleManualRun = () => runOmnisEngine(true);
-
-      const handleBacktest = async (symbol) => {
-        try {
-          setBacktestReport({ running: true });
-          // obter candles
-          const k15 = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=15m&limit=1000`).then(r => r.ok ? r.json() : []);
-          if (!k15 || k15.length === 0) {
-            setBacktestReport({ error: 'falha ao obter candles' });
-            return;
-          }
-          const report = simpleBacktest(k15, 800, config.INITIAL_CAPITAL_BRL);
-          setBacktestReport(report);
-        } catch (e) {
-          setBacktestReport({ error: e.message });
-        }
-      };
-
-      return (
-        <div className="max-w-7xl mx-auto p-4 lg:p-12 relative min-h-screen">
-          <div className="fixed top-0 left-0 w-full z-50 h-1 bg-white/5"><div className="progress-bar h-full" style={{width: `${progress}%`}}></div></div>
-
-          <div className="glass glow-indigo rounded-[40px] p-8 mb-12 relative overflow-hidden">
-            <div className="scan-bar opacity-20"></div>
-            <div className="flex flex-col lg:flex-row justify-between items-center gap-8 relative z-20">
-              <div className="flex items-center gap-6">
-                <div className="p-4 bg-indigo-600/20 rounded-2xl border border-indigo-500/30">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
-                </div>
-                <div>
-                  <h1 className="text-3xl font-black h-gradient tracking-tighter uppercase leading-none">Omnis-Vision <span className="text-white opacity-40 text-lg font-light tracking-normal">Elite Engine — Frontend</span></h1>
-                  <p className="text-[10px] mono text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 mt-2">
-                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
-                    {status} | USDT↔BRL: {usdtBrl ? usdtBrl.toFixed(2) : '—'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-6">
-                <div className="text-right mr-4">
-                  <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-1 italic">Próxima varredura</p>
-                  <p className="text-3xl font-black text-white mono leading-none">{timerSeconds}s</p>
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={handleManualRun} className="btn p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all active:scale-95 shadow-xl">Rodar Agora</button>
-                  <button onClick={() => { setSignals([]); setBacktestReport(null); }} className="btn p-4 bg-red-700/10 hover:bg-red-700/20 rounded-2xl border border-red-700/10 transition-all">Limpar</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-            <div className="lg:col-span-8 space-y-8">
-              {loading ? (
-                <div className="glass p-20 rounded-[50px] text-center border-indigo-500/10 relative overflow-hidden">
-                  <div className="scan-bar opacity-10"></div>
-                  <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-                  <p className="text-[10px] font-black text-slate-500 tracking-[0.6em] uppercase animate-pulse">Varredura em execução...</p>
-                </div>
-              ) : signals.length === 0 ? (
-                <div className="glass p-12 rounded-[50px] text-center border-dashed border-white/10 opacity-60">
-                  <p className="text-slate-400 italic">Nenhuma confluência de alta probabilidade detectada no momento.</p>
-                </div>
-              ) : (
-                signals.map((s, i) => (
-                  <div key={i} className="glass tech-card rounded-[30px] p-6 relative overflow-hidden group shadow-2xl">
-                    <div className="absolute top-0 right-0 p-6 text-right z-10">
-                      <div className="text-[9px] font-black text-slate-600 uppercase mb-1 tracking-tighter">Omnis Confidence</div>
-                      <div className="text-4xl font-black text-indigo-400 opacity-80 italic">{s.confidence}%</div>
-                    </div>
-
-                    <div className="flex items-center gap-6 mb-4 relative z-10">
-                      <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-indigo-950 rounded-xl flex items-center justify-center text-2xl font-black text-white shadow-2xl border border-white/10 italic">
-                        {s.coin[0]}
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-black text-white tracking-tight uppercase italic">{s.coin}</h3>
-                        <div className="flex gap-3 mt-3">
-                          <div className="bg-emerald-500/8 border border-emerald-500/20 px-3 py-1 rounded-2xl">
-                            <span className="text-xs font-black text-emerald-300 uppercase tracking-widest">LUCRO: +{s.netProfitPct}%</span>
-                          </div>
-                          <div className="bg-indigo-500/8 border border-indigo-500/20 px-3 py-1 rounded-2xl">
-                            <span className="text-xs font-black text-indigo-300 uppercase tracking-widest">EST: {s.eta}</span>
-                          </div>
-                          <div className="bg-white/5 border border-white/10 px-3 py-1 rounded-2xl">
-                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">VIÉS: {s.bias}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div className="p-4 rounded-lg border bg-white/[0.02]">
-                        <p className="text-[10px] text-slate-500 uppercase">Entrada (BRL)</p>
-                        <div className="text-xl mono font-black">{fmtBRL(s.priceBRL)}</div>
-                      </div>
-                      <div className="p-4 rounded-lg border bg-white/[0.02]">
-                        <p className="text-[10px] text-slate-500 uppercase">Alvo (BRL)</p>
-                        <div className="text-xl mono font-black">{fmtBRL(s.targetBRL)}</div>
-                      </div>
-                      <div className="p-4 rounded-lg border bg-white/[0.02]">
-                        <p className="text-[10px] text-slate-500 uppercase">Stop (BRL)</p>
-                        <div className="text-xl mono font-black">{fmtBRL(s.stopBRL)}</div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-4 pt-4 border-t border-white/5">
-                      <p className="text-xs text-slate-400 italic">"{s.insight}"</p>
-                      <div className="flex gap-3">
-                        <a href={`https://www.mercadobitcoin.com.br/negociacoes/${s.coin.toLowerCase()}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-white text-black rounded-xl uppercase text-xs font-black">Executar no MB</a>
-                        <button onClick={() => handleBacktest(s.symbol)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl uppercase text-xs font-black">Backtest</button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="lg:col-span-4 space-y-8">
-              <div className="glass p-6 rounded-[20px] border-indigo-500/20 shadow-2xl">
-                <h3 className="text-xs font-black text-white mb-4 uppercase italic tracking-widest flex items-center gap-3"><div className="w-2.5 h-2.5 bg-indigo-400 rounded-full shadow-[0_0_15px_#6366f1]"></div>Omnis Protocol vFull</h3>
-                <p className="text-[12px] text-slate-300 italic mb-4">Frontend-only mode. Sistema projetado para maximizar probabilidade com regras institucionais, validação por heurística e verificação de liquidez. Para implantação real (ordens automáticas, chaves privadas), use backend seguro.</p>
-
-                <div className="text-sm space-y-3">
-                  <div><strong>Filtro liquidez:</strong> {config.MIN_QUOTE_VOL.toLocaleString('pt-BR')}</div>
-                  <div><strong>Capital inicial (simulação):</strong> {fmtBRL(config.INITIAL_CAPITAL_BRL)}</div>
-                  <div><strong>Max por trade:</strong> {config.MAX_CAPITAL_PERCENT_PER_TRADE}%</div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-indigo-950/30 to-black p-6 rounded-[20px] border border-indigo-500/20 shadow-2xl">
-                <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] mb-3 italic">Backtest</h4>
-                {backtestReport ? (
-                  backtestReport.error ? (
-                    <p className="text-sm text-red-400">{backtestReport.error}</p>
-                  ) : backtestReport.running ? (
-                    <p className="text-sm text-slate-400">Executando...</p>
-                  ) : (
-                    <div className="text-sm text-slate-300 space-y-2">
-                      <div>Trades: {backtestReport.tradesCount}</div>
-                      <div>Winrate: {backtestReport.winrate.toFixed(2)}%</div>
-                      <div>Total PnL: {fmtBRL(backtestReport.totalPnl)}</div>
-                      <div>Final Balance: {fmtBRL(backtestReport.finalBalance)}</div>
-                    </div>
-                  )
-                ) : (
-                  <p className="text-sm text-slate-400">Clique em "Backtest" em qualquer sinal para rodar uma simulação rápida.</p>
-                )}
-              </div>
-
-              <div className="glass p-6 rounded-[20px]">
-                <h4 className="text-xs font-black text-white uppercase italic mb-2">Atenção</h4>
-                <ul className="text-xs text-slate-400 list-disc ml-4 space-y-2">
-                  <li>Este projeto é front-end apenas — chaves expostas significam risco.</li>
-                  <li>Integração de ordens reais requer backend seguro, KYC e medidas anti-fraud.</li>
-                  <li>Resultados simulados não garantem performance futura. Teste em conta demo.</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
+        return { valid: true, currentPrice, atr, score, stochRsi, sma200h, ema21, volumeZScore, rsi };
     };
+
+    /************************************************************************
+     * Liquidity check (orderbook depth) - defensive and tolerant
+     ************************************************************************/
+    async function checkLiquidity(symbol, minNotionalUSD = 10000, usdtBrl = 5) {
+        try {
+            const res = await fetch(`https://api.binance.com/api/v3/depth?symbol=${symbol}&limit=50`);
+            if (!res.ok) return false;
+            const depth = await res.json();
+            const bids = Array.isArray(depth.bids) ? depth.bids.slice(0, 10) : [];
+            const asks = Array.isArray(depth.asks) ? depth.asks.slice(0, 10) : [];
+            const bidsNotional = bids.reduce((s, b) => s + safeParseFloat(b[0]) * safeParseFloat(b[1]), 0);
+            const asksNotional = asks.reduce((s, a) => s + safeParseFloat(a[0]) * safeParseFloat(a[1]), 0);
+            const notional = Math.min(bidsNotional, asksNotional);
+            const notionalUSD = notional; // pair is USDT base
+            return notionalUSD >= minNotionalUSD;
+        } catch (e) {
+            console.warn('checkLiquidity error', e);
+            return false;
+        }
+    }
+
+    /************************************************************************
+     * ENGINE - scan loop with concurrency control and safety flags
+     ************************************************************************/
+    const App = () => {
+        const [signals, setSignals] = useState([]);
+        const [loading, setLoading] = useState(true);
+        const [usdtBrl, setUsdtBrl] = useState(0);
+        const [status, setStatus] = useState('SINCRONIZANDO NODES...');
+        const [timer, setTimer] = useState(Math.round(ENGINE_CONFIG.COOLDOWN_MS / 1000));
+        const [progress, setProgress] = useState(0);
+
+        const isRunningRef = useRef(false);
+        const abortRef = useRef(false);
+
+        const fmtBRL = (v) => {
+            try {
+                return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: v < 1 ? 4 : 2 });
+            } catch {
+                return 'R$ ' + Number(v).toFixed(2);
+            }
+        };
+
+        const safeFetchJson = async (url) => {
+            try {
+                const res = await fetch(url);
+                if (!res.ok) return null;
+                return await res.json();
+            } catch (e) {
+                return null;
+            }
+        };
+
+        const runScan = useCallback(async (manual = false) => {
+            if (isRunningRef.current) {
+                console.log('Scan in progress - skipping overlapping run');
+                return;
+            }
+            isRunningRef.current = true;
+            abortRef.current = false;
+            setLoading(true);
+            setProgress(3);
+            setStatus('INICIANDO VARREDURA');
+
+            try {
+                // 1) obter USDTBRL - tentar Binance, senão fallback 5.0
+                let rateBRL = usdtBrl || 5.0;
+                try {
+                    const pRes = await safeFetchJson('https://api.binance.com/api/v3/ticker/price?symbol=USDTBRL');
+                    if (pRes && pRes.price) rateBRL = safeParseFloat(pRes.price);
+                } catch (e) {
+                    console.warn('Failed to get USDTBRL, using fallback', e);
+                }
+                setUsdtBrl(rateBRL);
+                setProgress(10);
+
+                // 2) obter tickers 24h
+                const tickers = await safeFetchJson('https://api.binance.com/api/v3/ticker/24hr') || [];
+                // filtro whitelist + quoteVolume
+                const candidates = tickers.filter(t => {
+                    try {
+                        const base = t.symbol.replace('USDT', '');
+                        return OMNI_WHITELIST.includes(base) && safeParseFloat(t.quoteVolume) > ENGINE_CONFIG.MIN_QUOTE_VOL;
+                    } catch { return false; }
+                });
+
+                // fallback: se nenhum, pegar primeiros pares da whitelist
+                const finalCandidates = candidates.length ? candidates : tickers.filter(t => OMNI_WHITELIST.includes(t.symbol.replace('USDT',''))).slice(0, 40);
+
+                setProgress(18);
+
+                const groups = chunkArray(finalCandidates, ENGINE_CONFIG.POOL_CONCURRENCY);
+                const discovered = [];
+
+                for (let gi = 0; gi < groups.length; gi++) {
+                    if (abortRef.current) break;
+                    const group = groups[gi];
+                    setProgress(Math.round(18 + (gi / groups.length) * 70));
+                    // process group concurrently
+                    await Promise.all(group.map(async (tkr) => {
+                        if (abortRef.current) return;
+                        try {
+                            const symbol = tkr.symbol;
+                            setStatus(`SCANNING ${symbol}`);
+                            // fetch klines (defensive: allow partial failure)
+                            const [k5, k15, k1h] = await Promise.all([
+                                safeFetchJson(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=5m&limit=30`),
+                                safeFetchJson(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=15m&limit=120`),
+                                safeFetchJson(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1h&limit=250`)
+                            ]);
+
+                            if (!k15 || !k1h) return;
+
+                            const q = computePrecisionMetrics(k5, k15, k1h);
+                            if (!q.valid) return;
+
+                            if (q.score >= ENGINE_CONFIG.MIN_SCORE) {
+                                // check liquidity (best-effort)
+                                const liquidityOk = await checkLiquidity(symbol, 10_000, rateBRL).catch(()=>false);
+                                if (!liquidityOk) return;
+
+                                // calculate targets/stops using ATR and conservative multipliers
+                                const target = q.currentPrice + q.atr * 3.4;
+                                const stop = q.currentPrice - q.atr * 2.1;
+                                const netProfit = ((target / q.currentPrice) - 1 - ENGINE_CONFIG.FEE_MB - ENGINE_CONFIG.SPREAD_BUFFER) * 100;
+
+                                if (netProfit > 1.0) {
+                                    discovered.push({
+                                        coin: symbol.replace('USDT',''),
+                                        symbol,
+                                        score: q.score,
+                                        priceBRL: q.currentPrice * rateBRL,
+                                        priceUSDT: q.currentPrice,
+                                        targetBRL: target * rateBRL,
+                                        targetUSDT: target,
+                                        stopBRL: stop * rateBRL,
+                                        stopUSDT: stop,
+                                        eta: Math.round((q.atr / q.currentPrice) * 4500) + 'm',
+                                        volM: (safeParseFloat(tkr.quoteVolume) / 1_000_000).toFixed(1),
+                                        netProfit: netProfit.toFixed(2)
+                                    });
+                                }
+                            }
+                        } catch (e) {
+                            // don't blow up the entire group due to one failure
+                            console.warn('ticker processing error', e);
+                        }
+                    }));
+                    // small sleep to reduce risk of burst rate-limit on free endpoints
+                    await new Promise(res => setTimeout(res, 120));
+                }
+
+                discovered.sort((a,b) => b.score - a.score || parseFloat(b.netProfit) - parseFloat(a.netProfit));
+                setSignals(discovered);
+                setProgress(100);
+                setStatus('IDLE - MONITORIZANDO 100+ ATIVOS');
+            } catch (err) {
+                console.error('Scan error', err);
+                setStatus('ERRO DE SINCRONIZAÇÃO');
+            } finally {
+                setLoading(false);
+                isRunningRef.current = false;
+            }
+        }, [usdtBrl]);
+
+        useEffect(() => {
+            // initial run + schedule
+            runScan();
+            let remaining = Math.round(ENGINE_CONFIG.COOLDOWN_MS / 1000);
+            setTimer(remaining);
+            const tick = setInterval(() => {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    runScan();
+                    remaining = Math.round(ENGINE_CONFIG.COOLDOWN_MS / 1000);
+                }
+                setTimer(remaining);
+            }, 1000);
+            return () => {
+                abortRef.current = true;
+                clearInterval(tick);
+            };
+        }, [runScan]);
+
+        // manual controls
+        const handleRunNow = () => {
+            runScan(true);
+        };
+
+        const handleStop = () => {
+            abortRef.current = true;
+            setStatus('INTERRUPTOPEMANENTE');
+            setLoading(false);
+        };
+
+        return (
+            <div className="max-w-7xl mx-auto p-4 lg:p-12 min-h-screen relative">
+                <div className="fixed top-0 left-0 w-full z-50 h-[3px] bg-white/5">
+                    <div className="progress-bar h-full" style={{ width: `${progress}%` }} />
+                </div>
+
+                <div className="glass glow-pulse rounded-[40px] p-8 mb-12 relative overflow-hidden">
+                    <div className="scan-line opacity-20"></div>
+                    <div className="flex flex-col lg:flex-row justify-between items-center gap-10 relative z-20">
+                        <div className="flex items-center gap-8">
+                            <div className="p-4 bg-indigo-600/30 rounded-3xl border border-indigo-500/50">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" className="animate-pulse"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-black h-gradient tracking-tighter uppercase italic leading-none">Quantum Vortex <span className="text-white opacity-40 text-lg font-light tracking-normal not-italic">Omni-Asset</span></h1>
+                                <p className="text-[10px] mono text-slate-500 uppercase tracking-[0.4em] flex items-center gap-3 mt-3 font-bold">
+                                    <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping" aria-hidden="true"></span>
+                                    {status} | TAXA BRL: {usdtBrl ? usdtBrl.toFixed(2) : '—'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-14">
+                            <div className="text-right">
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1 italic">Recalibração Omni</p>
+                                <p className="text-4xl font-black text-white mono tabular-nums">{timer}s</p>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button onClick={handleRunNow} aria-label="Rodar varredura agora" className="p-4 bg-white/5 hover:bg-indigo-600/40 rounded-2xl border border-white/10 transition-all active:scale-90 shadow-2xl">Rodar Agora</button>
+                                <button onClick={handleStop} aria-label="Interromper varredura" className="p-4 bg-red-700/10 hover:bg-red-700/20 rounded-2xl border border-red-700/10 transition-all">Parar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    <div className="lg:col-span-8 space-y-8">
+                        {loading && progress < 100 ? (
+                            <div className="glass p-32 rounded-[56px] text-center border-indigo-500/10 relative overflow-hidden">
+                                <div className="scan-line opacity-10"></div>
+                                <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-8"></div>
+                                <p className="text-[11px] font-black text-slate-500 tracking-[1em] uppercase">Mapeando nodes e filtrando confluências...</p>
+                            </div>
+                        ) : signals.length === 0 ? (
+                            <div className="glass p-20 rounded-[56px] text-center border-dashed border-white/10 opacity-50">
+                                <p className="text-slate-500 italic text-sm tracking-[0.2em] uppercase font-bold leading-relaxed">A aguardar confluência Omni-Precision...<br/><span className="text-[9px] font-normal tracking-normal text-slate-700">Apenas sinais de alta capilaridade são mostrados.</span></p>
+                            </div>
+                        ) : (
+                            signals.map((s, i) => (
+                                <div key={i} className="card-institutional rounded-[48px] p-10 relative overflow-hidden group shadow-2xl" role="article" aria-label={`Sinal ${s.coin}`}>
+                                    <div className="absolute top-0 right-0 p-10 text-right z-10">
+                                        <div className="text-[10px] font-black text-slate-700 uppercase mb-1 tracking-tighter">Probabilidade Omni</div>
+                                        <div className="text-6xl font-black text-indigo-500 opacity-20 group-hover:opacity-100 transition-all italic leading-none">{s.score}%</div>
+                                    </div>
+
+                                    <div className="flex items-center gap-8 mb-12 relative z-10">
+                                        <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-950 rounded-[28px] flex items-center justify-center text-4xl font-black text-white shadow-2xl border border-white/10 italic">
+                                            {s.coin[0]}
+                                        </div>
+                                        <div>
+                                            <h3 className="text-5xl font-black text-white tracking-tighter uppercase italic leading-none">{s.coin}</h3>
+                                            <div className="flex flex-wrap gap-4 mt-5">
+                                                <div className="bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-2xl shadow-lg">
+                                                    <span className="text-[11px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                                                        LUCRO LÍQUIDO: +{s.netProfit}%
+                                                    </span>
+                                                </div>
+                                                <div className="bg-indigo-500/10 border border-indigo-500/20 px-4 py-2 rounded-2xl shadow-lg">
+                                                    <span className="text-[11px] font-black text-indigo-300 uppercase tracking-widest flex items-center gap-2">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                                        ESTIMATIVA: {s.eta}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 relative z-10">
+                                        <PriceBlock label="PONTO DE COMPRA (BRL)" val={fmtBRL(s.priceBRL)} active={true} />
+                                        <PriceBlock label="SAÍDA QUANTUM" val={fmtBRL(s.targetBRL)} color="text-indigo-400" />
+                                        <PriceBlock label="PROTEÇÃO (STOP)" val={fmtBRL(s.stopBRL)} color="text-red-500" />
+                                    </div>
+
+                                    <div className="flex flex-col lg:flex-row justify-between items-center gap-10 pt-10 border-t border-white/5 relative z-10">
+                                        <div className="flex-1">
+                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-3 flex items-center gap-2">
+                                                <div className="w-2 h-2 bg-indigo-500 rounded-full" aria-hidden="true"></div>
+                                                Racional Técnico Omni-Asset
+                                            </p>
+                                            <p className="text-xs text-slate-400 italic leading-relaxed border-l-2 border-indigo-500/30 pl-5 uppercase font-bold tracking-tight">
+                                                Fluxo institucional detectado por Z-Score de volume e compressão 15M alinhada com 1H.
+                                            </p>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <a href={`https://www.mercadobitcoin.com.br/negociacoes/${s.coin.toLowerCase()}`} target="_blank" rel="noopener noreferrer" className="w-full lg:w-auto bg-white text-black font-black text-xs px-8 py-4 rounded-[28px] hover:bg-indigo-600 hover:text-white transition-all uppercase tracking-[0.4em] shadow-2xl text-center active:scale-95">ABRIR TRADE NO MB</a>
+                                            <button onClick={() => navigator.clipboard?.writeText(JSON.stringify(s))} className="px-4 py-3 bg-white/5 rounded-[20px] border border-white/10 text-xs font-medium">Copiar sinal</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    <div className="lg:col-span-4 space-y-10">
+                        <div className="glass p-10 rounded-[48px] border-indigo-500/20 shadow-2xl">
+                            <h3 className="text-xs font-black text-white mb-6 uppercase italic tracking-widest flex items-center gap-4">
+                                <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full shadow-[0_0_15px_#4f46e5] animate-pulse" aria-hidden="true"></div>
+                                Omni Core v13
+                            </h3>
+                            <div className="space-y-6">
+                                <IntelItem title="Monitorização Universal" text="Varredura simultânea de 100+ ativos confiáveis com prioridade em liquidez real." />
+                                <IntelItem title="Z-Score de Precisão" text="Deteção de anomalias de volume para identificar posicionamentos institucionais." />
+                                <IntelItem title="Taxa Zero-Erro" text="Síncrono com taxa USDT/BRL no momento do sinal, com validações de fallback." />
+                            </div>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-indigo-950/50 to-black p-12 rounded-[52px] border border-indigo-500/20 shadow-2xl text-center relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl group-hover:scale-150 transition-transform" aria-hidden="true"></div>
+                            <div className="flex justify-center mb-6 opacity-30 italic font-black text-indigo-400">INSTITUTIONAL GRADE</div>
+                            <h4 className="text-[11px] font-black text-slate-300 uppercase tracking-widest mb-4">Liquidez Sistémica</h4>
+                            <p className="text-[10px] text-slate-500 italic leading-relaxed font-bold uppercase tracking-tighter">Ativos filtrados por volume real &gt; { (ENGINE_CONFIG.MIN_QUOTE_VOL / 1_000_000).toFixed(1) }M USD para reduzir slippage.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const PriceBlock = ({ label, val, color = "text-white", active = false }) => (
+        <div className={`p-6 rounded-[32px] border ${active ? 'bg-indigo-600/10 border-indigo-500/40 shadow-inner' : 'bg-white/[0.02] border-white/5'} transition-all`}>
+            <p className="text-[9px] font-black text-slate-600 uppercase mb-3 tracking-widest italic">{label}</p>
+            <p className={`text-2xl font-mono font-bold tracking-tighter ${color} tabular-nums leading-none`}>{val}</p>
+        </div>
+    );
+
+    const IntelItem = ({ title, text }) => (
+        <div className="relative pl-8 border-l-2 border-indigo-500/20">
+            <div className="absolute -left-[9px] top-0 w-4 h-4 bg-indigo-500 rounded-full border-4 border-[#010103]" aria-hidden="true"></div>
+            <h4 className="text-[12px] font-black text-white uppercase italic tracking-tighter">{title}</h4>
+            <p className="text-[11px] text-slate-500 mt-4 leading-relaxed font-medium">{text}</p>
+        </div>
+    );
 
     // render
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
-  </script>
+    </script>
 </body>
 </html>
